@@ -41,7 +41,7 @@ export default function AdminPage() {
       const accessToken = data.session?.access_token;
 
       if (!accessToken) {
-        router.replace("/admin/login");
+        router.replace("/sinh-vien/dang-nhap");
         return;
       }
 

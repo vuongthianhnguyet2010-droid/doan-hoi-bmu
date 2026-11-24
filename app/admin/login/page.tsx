@@ -92,6 +92,25 @@ export default function AdminLogin() {
         }}>
           {loading ? "Đang đăng nhập..." : "Đăng nhập"}
         </button>
+        <p style={{
+  textAlign: "center",
+  marginTop: 20,
+  marginBottom: 0,
+  color: "#64748b",
+  fontSize: 14
+}}>
+  Bạn là sinh viên?{" "}
+  <a
+    href="/sinh-vien/dang-nhap"
+    style={{
+      color: "#174783",
+      fontWeight: 600,
+      textDecoration: "none"
+    }}
+  >
+    Đăng nhập tại đây
+  </a>
+</p>
       </form>
     </main>
   );

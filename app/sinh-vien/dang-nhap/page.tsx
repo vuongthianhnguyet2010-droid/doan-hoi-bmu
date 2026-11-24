@@ -104,6 +104,25 @@ export default function StudentLoginPage() {
             Đăng ký ngay
           </Link>
         </p>
+        <p style={{
+  textAlign: "center",
+  marginTop: 20,
+  marginBottom: 0,
+  color: "#64748b",
+  fontSize: 14
+}}>
+  Bạn là quản trị viên?{" "}
+  <a
+    href="/admin/login"
+    style={{
+      color: "#174783",
+      fontWeight: 600,
+      textDecoration: "none"
+    }}
+  >
+    Đăng nhập tại đây
+  </a>
+</p>
       </form>
     </main>
   );
