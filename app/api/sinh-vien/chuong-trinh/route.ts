@@ -1,8 +1,10 @@
 
-import { NextResponse } from "next/server";
+import { NextResponse, connection } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
 export async function GET(request: Request) {
+  await connection();
+
   try {
     const token = request.headers
       .get("Authorization")

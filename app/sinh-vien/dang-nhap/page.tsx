@@ -111,7 +111,7 @@ export default function StudentLoginPage() {
   color: "#64748b",
   fontSize: 14
 }}>
-  Bạnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn là quản trị viên?{" "}
+  Bạn là quản trị viên?{" "}
   <a
     href="/admin/login"
     style={{
