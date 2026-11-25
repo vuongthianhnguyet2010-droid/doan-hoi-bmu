@@ -35,7 +35,6 @@ async function getAdmin(request: Request) {
   return admin ? adminClient : null;
 }
 
-
 // Lấy danh sách chương trình kèm số lượng sinh viên
 export async function GET(request: Request) {
   const supabase = await getAdmin(request);
@@ -84,7 +83,6 @@ export async function GET(request: Request) {
   return NextResponse.json({ programs: result });
 }
 
-
 // Thêm chương trình
 export async function POST(request: Request) {
   const supabase = await getAdmin(request);
@@ -113,6 +111,7 @@ export async function POST(request: Request) {
       ngay_bat_dau: body.ngay_bat_dau || null,
       ngay_ket_thuc: body.ngay_ket_thuc || null,
       don_vi_to_chuc: body.don_vi_to_chuc || null,
+      so_quyet_dinh: body.so_quyet_dinh?.trim() || null,
       trang_thai: "draft",
     })
     .select()
@@ -155,6 +154,7 @@ export async function PATCH(request: Request) {
     "ngay_bat_dau",
     "ngay_ket_thuc",
     "don_vi_to_chuc",
+    "so_quyet_dinh",
     "trang_thai",
   ];
 
@@ -162,7 +162,10 @@ export async function PATCH(request: Request) {
 
   for (const field of allowedFields) {
     if (field in updates) {
-      cleanUpdates[field] = updates[field];
+      cleanUpdates[field] =
+        field === "so_quyet_dinh" && typeof updates[field] === "string"
+          ? updates[field].trim() || null
+          : updates[field];
     }
   }
 

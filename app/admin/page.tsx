@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useState } from "react";
@@ -11,6 +12,7 @@ type Program = {
   ngay_bat_dau: string | null;
   ngay_ket_thuc: string | null;
   don_vi_to_chuc: string | null;
+  so_quyet_dinh: string | null;
   trang_thai: "draft" | "published" | "closed";
   so_luong_sinh_vien: number;
 };
@@ -21,6 +23,7 @@ const emptyForm = {
   ngay_bat_dau: "",
   ngay_ket_thuc: "",
   don_vi_to_chuc: "",
+  so_quyet_dinh: "",
 };
 
 function normalizeUnit(value: string | null) {
@@ -124,6 +127,7 @@ export default function AdminPage() {
       ngay_bat_dau: program.ngay_bat_dau || "",
       ngay_ket_thuc: program.ngay_ket_thuc || "",
       don_vi_to_chuc: normalizeUnit(program.don_vi_to_chuc),
+      so_quyet_dinh: program.so_quyet_dinh || "",
     });
 
     setMessage("");
@@ -326,6 +330,18 @@ export default function AdminPage() {
             </label>
 
             <label style={labelStyle}>
+              Số Quyết định
+              <input
+                style={inputStyle}
+                value={form.so_quyet_dinh}
+                onChange={(e) =>
+                  setForm({ ...form, so_quyet_dinh: e.target.value })
+                }
+                placeholder="Nhập số Quyết định"
+              />
+            </label>
+
+            <label style={labelStyle}>
               Ngày bắt đầu
               <input
                 type="date"
@@ -407,13 +423,14 @@ export default function AdminPage() {
               style={{
                 width: "100%",
                 borderCollapse: "collapse",
-                minWidth: 800,
+                minWidth: 900,
               }}
             >
               <thead>
                 <tr style={{ background: "#eff6ff" }}>
                   {[
                     "Tên chương trình",
+                    "Số QĐ",
                     "Thời gian",
                     "Đơn vị",
                     "Trạng thái",
@@ -437,6 +454,10 @@ export default function AdminPage() {
                           {program.mo_ta}
                         </p>
                       )}
+                    </td>
+
+                    <td style={cellStyle}>
+                      {program.so_quyet_dinh || "—"}
                     </td>
 
                     <td style={cellStyle}>

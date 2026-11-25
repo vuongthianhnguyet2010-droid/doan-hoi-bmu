@@ -218,16 +218,6 @@ function formatDate(date: Date) {
   } năm ${date.getFullYear()}`;
 }
 
-function formatDateString(value: string | null | undefined) {
-  if (!value) return "";
-
-  const parts = value.slice(0, 10).split("-");
-
-  if (parts.length !== 3) return value;
-
-  return `${parts[2]} tháng ${parts[1]} năm ${parts[0]}`;
-}
-
 // ==========================================
 // TẠO GCN TỰ ĐỘNG
 // ==========================================
@@ -266,8 +256,7 @@ export async function POST(
     if (participantError || !participant) {
       return NextResponse.json(
         {
-          message:
-            "Không tìm thấy sinh viên trong chương trình.",
+          message: "Không tìm thấy sinh viên trong chương trình.",
         },
         { status: 404 }
       );
@@ -320,6 +309,14 @@ export async function POST(
     }
 
     // ==========================================
+    // KIỂM TRA SỐ QUYẾT ĐỊNH
+    // ==========================================
+
+    const soQuyetDinh = String(
+  program.so_quyet_dinh || ""
+).trim();
+
+    // ==========================================
     // KIỂM TRA GCN CŨ
     // ==========================================
 
@@ -333,7 +330,7 @@ export async function POST(
     if (existingError) throw existingError;
 
     // ==========================================
-    // CẤP SỐ GCN
+    // CẤP SỐ GCN NỘI BỘ
     // ==========================================
 
     let soChungNhan = existing?.so_chung_nhan || "";
@@ -357,7 +354,7 @@ export async function POST(
     }
 
     // ==========================================
-    // KIỂM TRA SỐ GCN TRÙNG
+    // KIỂM TRA SỐ GCN NỘI BỘ TRÙNG
     // ==========================================
 
     const { data: duplicate, error: duplicateError } =
@@ -570,36 +567,36 @@ export async function POST(
         timesBold,
         100,
         70,
-        365,
+        340,
         1500,
         RED
       );
 
-      // CHI HỘI
+      // HỌ TÊN
       drawCenteredFit(
         page,
-        `Chi hội: ${student.lop || ""}`,
+        `Sinh viên: ${student.ho_ten || ""}`,
         timesBoldItalic,
-        66,
-        42,
-        555,
-        1400,
+        82,
+        48,
+        475,
+        1600,
         BROWN
       );
 
       // CHI ĐOÀN
+      const tenChiDoan = `Chi đoàn: ${student.lop || ""}`;
+
       drawCenteredFit(
         page,
-        `Chi đoàn: ${student.lop || ""}`,
+        tenChiDoan,
         timesBoldItalic,
         66,
         42,
-        630,
+        600,
         1500,
         BROWN
       );
-
-      // ĐÃ BỎ ĐƯỜNG KẺ DƯỚI CHI ĐOÀN
 
       // NỘI DUNG HOẠT ĐỘNG
       let activityText =
@@ -624,7 +621,7 @@ export async function POST(
           timesBoldItalic,
           54,
           38,
-          780 + index * 75,
+          720 + index * 75,
           1750,
           BROWN
         );
@@ -682,19 +679,22 @@ export async function POST(
         BROWN
       );
 
-      // SỐ GCN
-      drawTextTop(
-        page,
-        `Số: ${soChungNhan}`,
-        timesBold,
-        36,
-        1280,
-        BROWN,
-        135
-      );
+      // SỐ QUYẾT ĐỊNH
+if (soQuyetDinh) {
+  drawTextTop(
+    page,
+    `Số: ${soQuyetDinh}`,
+    timesBold,
+    36,
+    1280,
+    BROWN,
+    135
+  );
+}
     } else {
       // ==========================================
       // MẪU HỘI SINH VIÊN
+      // GIỮ NGUYÊN
       // ==========================================
 
       // 2 LOGO
@@ -759,7 +759,7 @@ export async function POST(
         RED
       );
 
-      // HỌ TÊN - FONT GIỐNG GCN ĐOÀN
+      // HỌ TÊN
       drawCenteredFit(
         page,
         `Sinh viên: ${student.ho_ten || ""}`,
@@ -771,7 +771,7 @@ export async function POST(
         BROWN
       );
 
-      // CHI HỘI - FONT GIỐNG GCN ĐOÀN
+      // CHI HỘI
       drawCenteredFit(
         page,
         `Chi hội: ${student.lop || ""}`,
@@ -863,10 +863,10 @@ export async function POST(
         BROWN
       );
 
-      // SỐ GCN
+      // SỐ QUYẾT ĐỊNH
       drawTextTop(
         page,
-        `Số: ${soChungNhan}`,
+        `Số: ${soQuyetDinh}`,
         timesBold,
         36,
         1280,
@@ -950,6 +950,7 @@ export async function POST(
     return NextResponse.json({
       message: "Tạo giấy chứng nhận thành công.",
       so_chung_nhan: soChungNhan,
+      so_quyet_dinh: soQuyetDinh,
     });
   } catch (error) {
     console.error("Auto certificate error:", error);
