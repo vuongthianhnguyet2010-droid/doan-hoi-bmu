@@ -1,3 +1,4 @@
+
 "use client";
 
 import { Suspense, useEffect, useState } from "react";
@@ -53,6 +54,10 @@ function ProgramStudentsContent() {
   const [certificateFiles, setCertificateFiles] =
     useState<Record<string, File | null>>({});
   const [issuingId, setIssuingId] = useState("");
+
+  // Tạo GCN hàng loạt
+  const [bulkGenerating, setBulkGenerating] = useState(false);
+  const [bulkProgress, setBulkProgress] = useState("");
 
   useEffect(() => {
     async function init() {
@@ -383,6 +388,90 @@ function ProgramStudentsContent() {
     }
   }
 
+  // Tạo giấy chứng nhận tự động hàng loạt
+  async function handleBulkGenerate() {
+    const eligibleStudents = students.filter((item) => {
+      const status = getCertificateStatus(item.certificate);
+      return status === "Chưa cấp" || status === "Đã thu hồi";
+    });
+
+    if (eligibleStudents.length === 0) {
+      setError("Không có sinh viên nào cần tạo giấy chứng nhận.");
+      return;
+    }
+
+    if (
+      !window.confirm(
+        `Bạn có chắc muốn tạo giấy chứng nhận tự động cho ${eligibleStudents.length} sinh viên chưa cấp hoặc đã thu hồi GCN?`
+      )
+    ) {
+      return;
+    }
+
+    setBulkGenerating(true);
+    setBulkProgress("");
+    setError("");
+    setMessage("");
+
+    let success = 0;
+    let failed = 0;
+    const failedNames: string[] = [];
+
+    try {
+      for (let i = 0; i < eligibleStudents.length; i++) {
+        const item = eligibleStudents[i];
+
+        const student = Array.isArray(item.students)
+          ? item.students[0]
+          : item.students;
+
+        const studentName = student?.ho_ten || item.student_id;
+
+        setBulkProgress(
+          `Đang tạo ${i + 1}/${eligibleStudents.length}: ${studentName}`
+        );
+
+        try {
+          const response = await fetch(
+            `/api/admin/chuong-trinh/${programId}/sinh-vien/${item.id}/tao-tu-dong`,
+            {
+              method: "POST",
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            }
+          );
+
+          const result = await response.json();
+
+          if (!response.ok) {
+            throw new Error(
+              result.message || "Không tạo được giấy chứng nhận."
+            );
+          }
+
+          success++;
+        } catch {
+          failed++;
+          failedNames.push(studentName);
+        }
+      }
+
+      await loadStudents(token);
+
+      setMessage(
+        `Hoàn tất tạo GCN hàng loạt! Thành công: ${success}; thất bại: ${failed}.`
+      );
+
+      if (failedNames.length > 0) {
+        setError(`Sinh viên tạo thất bại: ${failedNames.join(", ")}`);
+      }
+    } finally {
+      setBulkGenerating(false);
+      setBulkProgress("");
+    }
+  }
+
   // Cấp giấy chứng nhận thủ công
   async function handleIssue(item: Participant) {
     const number = certificateNumbers[item.id]?.trim();
@@ -443,7 +532,9 @@ function ProgramStudentsContent() {
       await loadStudents(token);
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : "Không thể cấp giấy chứng nhận."
+        err instanceof Error
+          ? err.message
+          : "Không thể cấp giấy chứng nhận."
       );
     } finally {
       setIssuingId("");
@@ -522,7 +613,9 @@ function ProgramStudentsContent() {
       await loadStudents(token);
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : "Không thể thu hồi giấy chứng nhận."
+        err instanceof Error
+          ? err.message
+          : "Không thể thu hồi giấy chứng nhận."
       );
     }
   }
@@ -697,18 +790,55 @@ function ProgramStudentsContent() {
             Danh sách tham gia ({students.length})
           </h2>
 
-          <button
-            onClick={handleExportExcel}
-            disabled={loading || students.length === 0}
+          <div
             style={{
-              ...buttonStyle,
-              background: "#15803d",
-              opacity: loading || students.length === 0 ? 0.5 : 1,
+              display: "flex",
+              gap: 10,
+              flexWrap: "wrap",
             }}
           >
-            ↓ Xuất Excel
-          </button>
+            <button
+              onClick={handleBulkGenerate}
+              disabled={loading || bulkGenerating || students.length === 0}
+              style={{
+                ...buttonStyle,
+                background: "#7c3aed",
+                opacity:
+                  loading || bulkGenerating || students.length === 0
+                    ? 0.5
+                    : 1,
+              }}
+            >
+              {bulkGenerating
+                ? "Đang tạo hàng loạt..."
+                : "✨ Tạo GCN hàng loạt"}
+            </button>
+
+            <button
+              onClick={handleExportExcel}
+              disabled={loading || students.length === 0}
+              style={{
+                ...buttonStyle,
+                background: "#15803d",
+                opacity: loading || students.length === 0 ? 0.5 : 1,
+              }}
+            >
+              ↓ Xuất Excel
+            </button>
+          </div>
         </div>
+
+        {bulkGenerating && (
+          <p
+            style={{
+              color: "#7c3aed",
+              fontWeight: 600,
+              marginBottom: 16,
+            }}
+          >
+            ✨ {bulkProgress}
+          </p>
+        )}
 
         {loading ? (
           <p>Đang tải danh sách...</p>
@@ -814,12 +944,15 @@ function ProgramStudentsContent() {
                           <div style={{ display: "grid", gap: 7 }}>
                             <button
                               onClick={() => handleAutoGenerate(item)}
-                              disabled={issuingId === item.id}
+                              disabled={issuingId === item.id || bulkGenerating}
                               style={{
                                 ...buttonStyle,
                                 background: "#7c3aed",
                                 padding: "8px 10px",
-                                opacity: issuingId === item.id ? 0.6 : 1,
+                                opacity:
+                                  issuingId === item.id || bulkGenerating
+                                    ? 0.6
+                                    : 1,
                               }}
                             >
                               {issuingId === item.id
@@ -866,12 +999,15 @@ function ProgramStudentsContent() {
 
                             <button
                               onClick={() => handleIssue(item)}
-                              disabled={issuingId === item.id}
+                              disabled={issuingId === item.id || bulkGenerating}
                               style={{
                                 ...buttonStyle,
                                 background: "#15803d",
                                 padding: "8px 10px",
-                                opacity: issuingId === item.id ? 0.6 : 1,
+                                opacity:
+                                  issuingId === item.id || bulkGenerating
+                                    ? 0.6
+                                    : 1,
                               }}
                             >
                               {issuingId === item.id
@@ -885,10 +1021,12 @@ function ProgramStudentsContent() {
                       <td style={cellStyle}>
                         <button
                           onClick={() => handleDelete(item)}
+                          disabled={bulkGenerating}
                           style={{
                             ...buttonStyle,
                             background: "#dc2626",
                             padding: "7px 12px",
+                            opacity: bulkGenerating ? 0.5 : 1,
                           }}
                         >
                           Xóa
