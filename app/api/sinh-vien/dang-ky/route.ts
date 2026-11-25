@@ -1,3 +1,4 @@
+
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
@@ -8,7 +9,7 @@ export async function POST(request: Request) {
     const body = await request.json();
 
     const hoTen = String(body.ho_ten || "").trim();
-    const mssv = String(body.mssv || "").trim();
+    const mssv = String(body.mssv || "").trim().toUpperCase();
     const email = String(body.email || "").trim().toLowerCase();
     const password = body.password;
 
@@ -34,11 +35,9 @@ export async function POST(request: Request) {
     }
 
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const publishableKey =
-      process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
     const secretKey = process.env.SUPABASE_SECRET_KEY;
 
-    if (!url || !publishableKey || !secretKey) {
+    if (!url || !secretKey) {
       throw new Error("Thiếu cấu hình Supabase.");
     }
 
@@ -49,7 +48,7 @@ export async function POST(request: Request) {
       },
     });
 
-    // Kiểm tra MSSV đã tồn tại
+    // Kiểm tra MSSV trùng
     const { data: existingMssv, error: mssvError } =
       await adminClient
         .from("students")
@@ -68,7 +67,7 @@ export async function POST(request: Request) {
       );
     }
 
-    // Kiểm tra email đã có hồ sơ
+    // Kiểm tra email trùng hồ sơ
     const { data: existingEmail, error: emailError } =
       await adminClient
         .from("students")
@@ -87,28 +86,21 @@ export async function POST(request: Request) {
       );
     }
 
-    // Tạo tài khoản Supabase Auth
-    const authClient = createClient(url, publishableKey, {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false,
-      },
-    });
-
+    // Tạo tài khoản Auth, xác nhận email ngay
     const { data: authData, error: authError } =
-      await authClient.auth.signUp({
+      await adminClient.auth.admin.createUser({
         email,
         password,
-        options: {
-          data: {
-            mssv,
-            ho_ten: hoTen,
-            account_type: "student",
-          },
+        email_confirm: true,
+        user_metadata: {
+          mssv,
+          ho_ten: hoTen,
+          account_type: "student",
         },
       });
 
     if (authError) {
+      console.error("LỖI SUPABASE AUTH:", authError);
       return NextResponse.json(
         { message: authError.message },
         { status: 400 }
@@ -122,20 +114,9 @@ export async function POST(request: Request) {
       );
     }
 
-    // Chặn trường hợp email đã có tài khoản Auth
-    if (
-      authData.user.identities &&
-      authData.user.identities.length === 0
-    ) {
-      return NextResponse.json(
-        { message: "Email này đã được đăng ký tài khoản." },
-        { status: 409 }
-      );
-    }
-
     createdUserId = authData.user.id;
 
-    // Tạo hồ sơ sinh viên mới
+    // Tạo hồ sơ sinh viên
     const { error: insertError } = await adminClient
       .from("students")
       .insert({
@@ -146,8 +127,8 @@ export async function POST(request: Request) {
       });
 
     if (insertError) {
-      // Nếu tạo hồ sơ thất bại, xóa tài khoản Auth vừa tạo
       await adminClient.auth.admin.deleteUser(createdUserId);
+      createdUserId = null;
 
       console.error("Lỗi tạo hồ sơ sinh viên:", insertError);
 
@@ -159,8 +140,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       success: true,
-      message:
-        "Đăng ký thành công! Vui lòng kiểm tra email BMU để xác minh tài khoản.",
+      message: "Đăng ký tài khoản thành công! Bạn có thể đăng nhập ngay.",
     });
   } catch (error) {
     console.error("Lỗi đăng ký sinh viên:", error);
@@ -170,7 +150,13 @@ export async function POST(request: Request) {
       const secretKey = process.env.SUPABASE_SECRET_KEY;
 
       if (url && secretKey) {
-        const adminClient = createClient(url, secretKey);
+        const adminClient = createClient(url, secretKey, {
+          auth: {
+            autoRefreshToken: false,
+            persistSession: false,
+          },
+        });
+
         await adminClient.auth.admin.deleteUser(createdUserId);
       }
     }

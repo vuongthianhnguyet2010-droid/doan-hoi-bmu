@@ -45,6 +45,23 @@ export default function StudentPage() {
   const [error, setError] = useState("");
   const [viewingId, setViewingId] = useState("");
 
+  // Chỉnh sửa thông tin
+  const [editOpen, setEditOpen] = useState(false);
+  const [editName, setEditName] = useState("");
+  const [editClass, setEditClass] = useState("");
+  const [editLoading, setEditLoading] = useState(false);
+  const [editMessage, setEditMessage] = useState("");
+
+  // Đổi mật khẩu
+  const [pwOpen, setPwOpen] = useState(false);
+  const [oldPassword, setOldPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [pwLoading, setPwLoading] = useState(false);
+  const [pwMessage, setPwMessage] = useState("");
+
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
   useEffect(() => {
     async function loadData() {
       const { data } = await supabase.auth.getSession();
@@ -95,6 +112,148 @@ export default function StudentPage() {
   async function handleLogout() {
     await supabase.auth.signOut();
     router.replace("/sinh-vien/dang-nhap");
+  }
+
+  // Mở form chỉnh sửa
+  function openEditProfile() {
+    if (!student) return;
+
+    setEditName(student.ho_ten);
+    setEditClass(student.lop || "");
+    setEditMessage("");
+    setEditOpen(true);
+  }
+
+  // Lưu thông tin
+  async function handleUpdateProfile() {
+    if (!editName.trim()) {
+      setEditMessage("Họ và tên không được để trống.");
+      return;
+    }
+
+    setEditLoading(true);
+    setEditMessage("");
+
+    try {
+      const { data } = await supabase.auth.getSession();
+      const token = data.session?.access_token;
+
+      if (!token) {
+        router.replace("/sinh-vien/dang-nhap");
+        return;
+      }
+
+      const response = await fetch("/api/sinh-vien/cap-nhat-thong-tin", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          ho_ten: editName.trim(),
+          lop: editClass.trim(),
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        setEditMessage(result.message || "Cập nhật thất bại.");
+        return;
+      }
+
+      setStudent((prev) =>
+        prev
+          ? {
+              ...prev,
+              ho_ten: editName.trim(),
+              lop: editClass.trim() || null,
+            }
+          : prev
+      );
+
+      setEditOpen(false);
+      alert(result.message || "Cập nhật thông tin thành công.");
+    } catch {
+      setEditMessage("Không thể kết nối máy chủ.");
+    } finally {
+      setEditLoading(false);
+    }
+  }
+
+  // Mở form đổi mật khẩu
+  function openChangePassword() {
+    setOldPassword("");
+    setNewPassword("");
+    setConfirmPassword("");
+    setPwMessage("");
+    setPwOpen(true);
+  }
+
+  // Đổi mật khẩu
+  async function handleChangePassword() {
+    if (!oldPassword || !newPassword || !confirmPassword) {
+      setPwMessage("Vui lòng nhập đầy đủ thông tin.");
+      return;
+    }
+
+    if (newPassword.length < 8) {
+      setPwMessage("Mật khẩu mới phải có ít nhất 8 ký tự.");
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      setPwMessage("Mật khẩu xác nhận không khớp.");
+      return;
+    }
+
+    if (oldPassword === newPassword) {
+      setPwMessage("Mật khẩu mới phải khác mật khẩu hiện tại.");
+      return;
+    }
+
+    setPwLoading(true);
+    setPwMessage("");
+
+    try {
+      const { data } = await supabase.auth.getSession();
+      const token = data.session?.access_token;
+
+      if (!token) {
+        router.replace("/sinh-vien/dang-nhap");
+        return;
+      }
+
+      const response = await fetch("/api/sinh-vien/doi-mat-khau", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          mat_khau_cu: oldPassword,
+          mat_khau_moi: newPassword,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        setPwMessage(result.message || "Đổi mật khẩu thất bại.");
+        return;
+      }
+
+      setPwOpen(false);
+      setOldPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+
+      alert(result.message || "Đổi mật khẩu thành công.");
+    } catch {
+      setPwMessage("Không thể kết nối máy chủ.");
+    } finally {
+      setPwLoading(false);
+    }
   }
 
   async function handleViewCertificate(participantId: string) {
@@ -162,36 +321,204 @@ export default function StudentPage() {
 
   return (
     <main style={mainStyle}>
-      <header style={headerStyle}>
-        <div>
-          <h1 style={{ color: "#174783", margin: 0 }}>ĐOÀN – HỘI BMU</h1>
-          <p style={{ marginBottom: 0, color: "#64748b" }}>
-            Hệ thống giấy chứng nhận
-          </p>
-        </div>
 
-        <button onClick={handleLogout} style={buttonStyle}>
-          Đăng xuất
+{/* HEADER + HỒ SƠ SINH VIÊN */}
+<div className="student-mobile-panel">
+
+  {/* LOGO LUÔN HIỂN THỊ */}
+  <div className="student-logo">
+    <img
+      src="/logo-doan-hoi-bmu.png"
+      alt="ĐOÀN – HỘI BMU"
+      style={{ width: 220, height: "auto", objectFit: "contain" }}
+    />
+    <p style={{ marginBottom: 0, color: "#64748b" }}>
+      HỆ THỐNG QUẢN LÝ HOẠT ĐỘNG
+    </p>
+  </div>
+
+  {/* DÒNG RÚT GỌN */}
+  <div className="mobile-greeting">
+    <strong>Xin chào, {student.ho_ten}!</strong>
+
+    <button
+      onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+      className="mobile-menu-toggle"
+    >
+      {mobileMenuOpen ? "▲ Thu gọn" : "☰ Menu"}
+    </button>
+  </div>
+
+  {/* NỘI DUNG MENU */}
+  <div className={`student-panel-content ${mobileMenuOpen ? "open" : ""}`}>
+    <header className="student-header">
+      <button onClick={handleLogout} style={buttonStyle}>
+        Đăng xuất
+      </button>
+    </header>
+
+    <section style={cardStyle}>
+      <p style={{ color: "#64748b" }}>
+        Chào mừng bạn đến với hệ thống giấy chứng nhận Đoàn – Hội BMU.
+      </p>
+
+      <div style={infoStyle}>
+        <Info label="Mã số sinh viên" value={student.mssv} />
+        <Info label="Họ và tên" value={student.ho_ten} />
+        <Info label="Lớp" value={student.lop || "Chưa cập nhật"} />
+        <Info label="Email" value={student.email || "Chưa cập nhật"} />
+      </div>
+
+      <div style={actionGroupStyle}>
+        <button onClick={openEditProfile} style={editButtonStyle}>
+          Thông tin cá nhân
         </button>
-      </header>
 
-      <section style={cardStyle}>
-        <h2 style={{ color: "#174783", marginTop: 0 }}>
-          Xin chào, {student.ho_ten}!
-        </h2>
+        <button onClick={openChangePassword} style={passwordButtonStyle}>
+          🔐 Đổi mật khẩu
+        </button>
+      </div>
+    </section>
+  </div>
+</div>
 
-        <p style={{ color: "#64748b" }}>
-          Chào mừng bạn đến với hệ thống giấy chứng nhận Đoàn – Hội BMU.
-        </p>
+<style jsx>{`
+  .student-logo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  margin-bottom: 16px;
+  background: white;
+  padding: 16px;
+  border-radius: 12px;
+}
 
-        <div style={infoStyle}>
-          <Info label="Mã số sinh viên" value={student.mssv} />
-          <Info label="Họ và tên" value={student.ho_ten} />
-          <Info label="Lớp" value={student.lop || "Chưa cập nhật"} />
-          <Info label="Email" value={student.email || "Chưa cập nhật"} />
-        </div>
-      </section>
+  .mobile-greeting {
+    display: none;
+  }
 
+  .student-panel-content {
+    display: block;
+  }
+
+  @media (max-width: 768px) {
+    .student-logo {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      margin-bottom: 16px;
+      background: white;
+      padding: 16px;
+      border-radius: 12px;
+    }
+
+    .mobile-greeting {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 12px 16px;
+      background: #fff;
+      border-radius: 12px;
+      color: #174783;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+
+    .mobile-greeting strong {
+      font-size: 15px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .mobile-menu-toggle {
+      flex-shrink: 0;
+      border: none;
+      background: #174783;
+      color: white;
+      padding: 9px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    .student-panel-content {
+      display: none;
+    }
+
+    .student-panel-content.open {
+      display: block;
+    }
+
+    .student-header {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 12px;
+    }
+  }
+`}</style>
+
+<style jsx>{`
+  .mobile-greeting {
+    display: none;
+  }
+
+  .student-panel-content {
+    display: block;
+  }
+
+  @media (max-width: 768px) {
+    .mobile-greeting {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 12px 16px;
+      background: #fff;
+      border-radius: 12px;
+      color: #174783;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+
+    .mobile-greeting strong {
+      font-size: 15px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .mobile-menu-toggle {
+      flex-shrink: 0;
+      border: none;
+      background: #174783;
+      color: white;
+      padding: 9px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    .student-panel-content {
+      display: none;
+    }
+
+    .student-panel-content.open {
+      display: block;
+    }
+
+    .student-header {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 12px;
+      margin-top: 12px;
+    }
+  }
+`}</style>
+
+      {/* DANH SÁCH CHƯƠNG TRÌNH */}
       <section style={cardStyle}>
         <h2 style={{ color: "#174783", marginTop: 0 }}>
           Chương trình đã tham gia
@@ -266,6 +593,126 @@ export default function StudentPage() {
           </div>
         )}
       </section>
+
+      {/* MODAL CHỈNH SỬA THÔNG TIN */}
+      {editOpen && (
+        <div style={overlayStyle}>
+          <div style={modalStyle}>
+            <h2 style={modalTitleStyle}>✏️ Chỉnh sửa thông tin</h2>
+
+            <label style={labelStyle}>Mã số sinh viên</label>
+            <input
+              value={student.mssv}
+              disabled
+              style={disabledInputStyle}
+            />
+
+            <label style={labelStyle}>Email</label>
+            <input
+              value={student.email || ""}
+              disabled
+              style={disabledInputStyle}
+            />
+
+            <label style={labelStyle}>Họ và tên</label>
+            <input
+              value={editName}
+              onChange={(e) => setEditName(e.target.value)}
+              placeholder="Nhập họ và tên"
+              style={inputStyle}
+            />
+
+            <label style={labelStyle}>Lớp</label>
+            <input
+              value={editClass}
+              onChange={(e) => setEditClass(e.target.value)}
+              placeholder="Nhập lớp"
+              style={inputStyle}
+            />
+
+            {editMessage && (
+              <p style={messageErrorStyle}>{editMessage}</p>
+            )}
+
+            <div style={modalActionsStyle}>
+              <button
+                onClick={() => setEditOpen(false)}
+                disabled={editLoading}
+                style={cancelButtonStyle}
+              >
+                Hủy
+              </button>
+
+              <button
+                onClick={handleUpdateProfile}
+                disabled={editLoading}
+                style={buttonStyle}
+              >
+                {editLoading ? "Đang lưu..." : "Lưu thay đổi"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL ĐỔI MẬT KHẨU */}
+      {pwOpen && (
+        <div style={overlayStyle}>
+          <div style={modalStyle}>
+            <h2 style={modalTitleStyle}>🔐 Đổi mật khẩu</h2>
+
+            <label style={labelStyle}>Mật khẩu hiện tại</label>
+            <input
+              type="password"
+              value={oldPassword}
+              onChange={(e) => setOldPassword(e.target.value)}
+              placeholder="Nhập mật khẩu hiện tại"
+              style={inputStyle}
+              autoComplete="current-password"
+            />
+
+            <label style={labelStyle}>Mật khẩu mới</label>
+            <input
+              type="password"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              placeholder="Tối thiểu 8 ký tự"
+              style={inputStyle}
+              autoComplete="new-password"
+            />
+
+            <label style={labelStyle}>Xác nhận mật khẩu mới</label>
+            <input
+              type="password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              placeholder="Nhập lại mật khẩu mới"
+              style={inputStyle}
+              autoComplete="new-password"
+            />
+
+            {pwMessage && <p style={messageErrorStyle}>{pwMessage}</p>}
+
+            <div style={modalActionsStyle}>
+              <button
+                onClick={() => setPwOpen(false)}
+                disabled={pwLoading}
+                style={cancelButtonStyle}
+              >
+                Hủy
+              </button>
+
+              <button
+                onClick={handleChangePassword}
+                disabled={pwLoading}
+                style={buttonStyle}
+              >
+                {pwLoading ? "Đang xử lý..." : "Đổi mật khẩu"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
@@ -417,4 +864,113 @@ const buttonStyle: React.CSSProperties = {
   borderRadius: 8,
   cursor: "pointer",
   fontWeight: 600,
+};
+
+const actionGroupStyle: React.CSSProperties = {
+  display: "flex",
+  flexWrap: "wrap",
+  gap: 12,
+  marginTop: 24,
+};
+
+const editButtonStyle: React.CSSProperties = {
+  background: "#eff6ff",
+  color: "#174783",
+  border: "1px solid #bfdbfe",
+  padding: "11px 18px",
+  borderRadius: 8,
+  cursor: "pointer",
+  fontWeight: 600,
+};
+
+const passwordButtonStyle: React.CSSProperties = {
+  background: "#f1f5f9",
+  color: "#334155",
+  border: "1px solid #cbd5e1",
+  padding: "11px 18px",
+  borderRadius: 8,
+  cursor: "pointer",
+  fontWeight: 600,
+};
+
+const overlayStyle: React.CSSProperties = {
+  position: "fixed",
+  inset: 0,
+  background: "rgba(15, 23, 42, 0.55)",
+  display: "flex",
+  justifyContent: "center",
+  alignItems: "center",
+  padding: 16,
+  zIndex: 1000,
+  overflowY: "auto",
+};
+
+const modalStyle: React.CSSProperties = {
+  width: "100%",
+  maxWidth: 460,
+  background: "white",
+  borderRadius: 16,
+  padding: 24,
+  boxShadow: "0 20px 60px #00000030",
+  maxHeight: "90vh",
+  overflowY: "auto",
+};
+
+const modalTitleStyle: React.CSSProperties = {
+  color: "#174783",
+  marginTop: 0,
+  marginBottom: 22,
+};
+
+const labelStyle: React.CSSProperties = {
+  display: "block",
+  fontWeight: 600,
+  fontSize: 14,
+  marginBottom: 8,
+  marginTop: 16,
+  color: "#334155",
+};
+
+const inputStyle: React.CSSProperties = {
+  width: "100%",
+  boxSizing: "border-box",
+  padding: "12px 14px",
+  borderRadius: 8,
+  border: "1px solid #cbd5e1",
+  outline: "none",
+  fontSize: 15,
+  background: "white",
+  color: "#1e293b",
+};
+
+const disabledInputStyle: React.CSSProperties = {
+  ...inputStyle,
+  background: "#f1f5f9",
+  color: "#64748b",
+  cursor: "not-allowed",
+};
+
+const modalActionsStyle: React.CSSProperties = {
+  display: "flex",
+  justifyContent: "flex-end",
+  gap: 10,
+  marginTop: 24,
+  flexWrap: "wrap",
+};
+
+const cancelButtonStyle: React.CSSProperties = {
+  background: "#f1f5f9",
+  color: "#334155",
+  border: "1px solid #cbd5e1",
+  padding: "11px 18px",
+  borderRadius: 8,
+  cursor: "pointer",
+  fontWeight: 600,
+};
+
+const messageErrorStyle: React.CSSProperties = {
+  color: "#dc2626",
+  fontSize: 14,
+  marginTop: 14,
+  marginBottom: 0,
 };

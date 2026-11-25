@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from "react";
@@ -45,7 +46,7 @@ export default function StudentRegisterPage() {
         },
         body: JSON.stringify({
           ho_ten: hoTen.trim(),
-          mssv: mssv.trim(),
+          mssv: mssv.trim().toUpperCase(),
           email: studentEmail,
           password,
         }),
@@ -74,25 +75,47 @@ export default function StudentRegisterPage() {
   return (
     <main style={mainStyle}>
       <form onSubmit={handleRegister} style={formStyle}>
-        <h1 style={{ color: "#174783", textAlign: "center" }}>
-          ĐOÀN – HỘI BMU
-        </h1>
+        {/* Logo */}
+        <div style={headerStyle}>
+          <img
+            src="/logo-doan-hoi-bmu.png"
+            alt="Logo Đoàn - Hội BMU"
+            style={{
+              width: 320,
+              height: "auto",
+              maxHeight: 160,
+              objectFit: "contain",
+              display: "block",
+              margin: "0 auto",
+            }}
+          />
+        </div>
 
-        <h2 style={{ textAlign: "center" }}>
-          Đăng ký tài khoản sinh viên
-        </h2>
+        <div style={{ marginTop: 8, marginBottom: 28, textAlign: "center" }}>
+          <h2
+            style={{
+              fontSize: 24,
+              fontWeight: 700,
+              color: "#1e3a8a",
+              lineHeight: 1.4,
+              margin: 0,
+              fontFamily: "Arial, Helvetica, sans-serif",
+            }}
+          >
+            QUẢN LÝ HOẠT ĐỘNG BMU
+            <br />
+            Đăng ký
+          </h2>
+        </div>
 
-        <p style={{ color: "#64748b", textAlign: "center" }}>
-          Đăng ký tài khoản để tham gia các chương trình
-          Đoàn – Hội và nhận giấy chứng nhận.
-        </p>
-
+        {/* Thông tin */}
         <label style={labelStyle}>Họ và tên</label>
         <input
           style={inputStyle}
           value={hoTen}
           onChange={(e) => setHoTen(e.target.value)}
           placeholder="Nhập họ và tên"
+          autoComplete="name"
           required
         />
 
@@ -100,8 +123,8 @@ export default function StudentRegisterPage() {
         <input
           style={inputStyle}
           value={mssv}
-          onChange={(e) => setMssv(e.target.value)}
-          placeholder="Nhập MSSV"
+          onChange={(e) => setMssv(e.target.value.toUpperCase())}
+          placeholder="Nhập mã số sinh viên"
           required
         />
 
@@ -112,6 +135,7 @@ export default function StudentRegisterPage() {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           placeholder="example@bmu.edu.vn"
+          autoComplete="email"
           required
         />
 
@@ -123,6 +147,7 @@ export default function StudentRegisterPage() {
           onChange={(e) => setPassword(e.target.value)}
           placeholder="Ít nhất 8 ký tự"
           minLength={8}
+          autoComplete="new-password"
           required
         />
 
@@ -133,29 +158,40 @@ export default function StudentRegisterPage() {
           value={confirmPassword}
           onChange={(e) => setConfirmPassword(e.target.value)}
           placeholder="Nhập lại mật khẩu"
+          autoComplete="new-password"
           required
         />
 
+        {/* Thông báo */}
         {error && (
-          <p style={{ color: "#dc2626", fontSize: 14 }}>
-            {error}
-          </p>
+          <div style={errorStyle}>
+            ⚠️ {error}
+          </div>
         )}
 
         {message && (
-          <p style={{ color: "#15803d", fontSize: 14 }}>
-            {message}
-          </p>
+          <div style={successStyle}>
+            ✓ {message}
+          </div>
         )}
 
-        <button type="submit" disabled={loading} style={buttonStyle}>
-          {loading ? "Đang đăng ký..." : "Đăng ký tài khoản"}
+        {/* Nút đăng ký */}
+        <button
+          type="submit"
+          disabled={loading}
+          style={{
+            ...buttonStyle,
+            opacity: loading ? 0.7 : 1,
+          }}
+        >
+          {loading ? "Đang đăng ký..." : "Tạo tài khoản →"}
         </button>
 
-        <p style={{ textAlign: "center", marginTop: 20 }}>
+        {/* Chuyển đăng nhập */}
+        <p style={registerStyle}>
           Đã có tài khoản?{" "}
           <Link href="/sinh-vien/dang-nhap" style={linkStyle}>
-            Đăng nhập
+            Đăng nhập ngay
           </Link>
         </p>
       </form>
@@ -167,51 +203,93 @@ const mainStyle: React.CSSProperties = {
   minHeight: "100vh",
   display: "grid",
   placeItems: "center",
-  background: "#f3f6fb",
+  background:
+    "radial-gradient(circle at top left, #e0edff 0%, #f3f6fb 45%, #eef2f8 100%)",
   padding: 20,
 };
 
 const formStyle: React.CSSProperties = {
   width: "100%",
-  maxWidth: 440,
-  background: "white",
-  padding: 32,
-  borderRadius: 18,
-  boxShadow: "0 8px 35px #00000010",
+  maxWidth: 460,
+  background: "#ffffff",
+  padding: 36,
+  borderRadius: 24,
+  boxShadow: "0 20px 60px rgba(23,71,131,0.12)",
   boxSizing: "border-box",
+  border: "1px solid rgba(255,255,255,0.8)",
+};
+
+const headerStyle: React.CSSProperties = {
+  textAlign: "center",
+  marginBottom: 28,
 };
 
 const labelStyle: React.CSSProperties = {
   display: "block",
   fontWeight: 600,
-  marginTop: 16,
+  fontSize: 14,
+  color: "#334155",
+  marginTop: 18,
+  marginBottom: 8,
 };
 
 const inputStyle: React.CSSProperties = {
   display: "block",
   width: "100%",
-  padding: 13,
-  marginTop: 8,
-  border: "1px solid #d1d5db",
-  borderRadius: 8,
+  padding: 14,
+  border: "1px solid #dbe2ea",
+  borderRadius: 11,
   boxSizing: "border-box",
   fontSize: 15,
+  outline: "none",
+  background: "#fbfdff",
+  transition: "border 0.2s",
+};
+
+const errorStyle: React.CSSProperties = {
+  background: "#fef2f2",
+  color: "#dc2626",
+  border: "1px solid #fecaca",
+  padding: 12,
+  borderRadius: 10,
+  fontSize: 14,
+  marginTop: 18,
+};
+
+const successStyle: React.CSSProperties = {
+  background: "#f0fdf4",
+  color: "#15803d",
+  border: "1px solid #bbf7d0",
+  padding: 12,
+  borderRadius: 10,
+  fontSize: 14,
+  marginTop: 18,
 };
 
 const buttonStyle: React.CSSProperties = {
   width: "100%",
-  padding: 14,
-  marginTop: 24,
-  background: "#174783",
+  padding: 15,
+  marginTop: 26,
+  background: "linear-gradient(135deg, #174783, #2563a9)",
   color: "white",
   border: 0,
-  borderRadius: 10,
-  fontWeight: 600,
+  borderRadius: 12,
+  fontWeight: 700,
+  fontSize: 15,
   cursor: "pointer",
+  boxShadow: "0 6px 18px rgba(23,71,131,0.2)",
+  transition: "all 0.2s ease",
+};
+
+const registerStyle: React.CSSProperties = {
+  textAlign: "center",
+  marginTop: 22,
+  fontSize: 14,
+  color: "#64748b",
 };
 
 const linkStyle: React.CSSProperties = {
   color: "#174783",
-  fontWeight: 600,
+  fontWeight: 700,
   textDecoration: "none",
 };

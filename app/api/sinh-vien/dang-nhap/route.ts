@@ -30,7 +30,7 @@ export async function POST(request: Request) {
       await adminClient
         .from("students")
         .select("id, mssv, email, auth_user_id")
-        .eq("mssv", String(mssv).trim())
+        .eq("mssv", String(mssv).trim().toUpperCase())
         .maybeSingle();
 
     if (
