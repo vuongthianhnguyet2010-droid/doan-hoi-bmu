@@ -48,45 +48,48 @@ export async function POST(request: Request) {
       },
     });
 
-    // Kiểm tra MSSV trùng
-    const { data: existingMssv, error: mssvError } =
+    // Kiểm tra hồ sơ sinh viên theo MSSV
+    const { data: existingStudent, error: studentError } =
       await adminClient
         .from("students")
-        .select("id")
+        .select("id, mssv, ho_ten, email, auth_user_id")
         .eq("mssv", mssv)
         .maybeSingle();
 
-    if (mssvError) {
+    if (studentError) {
+      console.error("Lỗi kiểm tra MSSV:", studentError);
       throw new Error("Không thể kiểm tra MSSV.");
     }
 
-    if (existingMssv) {
+    // MSSV đã liên kết tài khoản
+    if (existingStudent?.auth_user_id) {
       return NextResponse.json(
-        { message: "MSSV này đã được đăng ký." },
+        { message: "MSSV này đã được đăng ký tài khoản." },
         { status: 409 }
       );
     }
 
-    // Kiểm tra email trùng hồ sơ
+    // Kiểm tra email có thuộc hồ sơ sinh viên khác không
     const { data: existingEmail, error: emailError } =
       await adminClient
         .from("students")
-        .select("id")
+        .select("id, mssv, auth_user_id")
         .eq("email", email)
         .maybeSingle();
 
     if (emailError) {
+      console.error("Lỗi kiểm tra email:", emailError);
       throw new Error("Không thể kiểm tra email.");
     }
 
-    if (existingEmail) {
+    if (existingEmail && existingEmail.mssv !== mssv) {
       return NextResponse.json(
         { message: "Email này đã được sử dụng." },
         { status: 409 }
       );
     }
 
-    // Tạo tài khoản Auth, xác nhận email ngay
+    // Tạo tài khoản Supabase Auth
     const { data: authData, error: authError } =
       await adminClient.auth.admin.createUser({
         email,
@@ -101,6 +104,7 @@ export async function POST(request: Request) {
 
     if (authError) {
       console.error("LỖI SUPABASE AUTH:", authError);
+
       return NextResponse.json(
         { message: authError.message },
         { status: 400 }
@@ -116,26 +120,51 @@ export async function POST(request: Request) {
 
     createdUserId = authData.user.id;
 
-    // Tạo hồ sơ sinh viên
-    const { error: insertError } = await adminClient
-      .from("students")
-      .insert({
-        mssv,
-        ho_ten: hoTen,
-        email,
-        auth_user_id: createdUserId,
-      });
+    // Nếu hồ sơ đã tồn tại nhưng chưa có tài khoản
+    // thì cập nhật hồ sơ cũ, không tạo hồ sơ trùng
+    if (existingStudent) {
+      const { error: updateError } = await adminClient
+        .from("students")
+        .update({
+          ho_ten: hoTen,
+          email,
+          auth_user_id: createdUserId,
+        })
+        .eq("id", existingStudent.id);
 
-    if (insertError) {
-      await adminClient.auth.admin.deleteUser(createdUserId);
-      createdUserId = null;
+      if (updateError) {
+        console.error("Lỗi cập nhật hồ sơ:", updateError);
 
-      console.error("Lỗi tạo hồ sơ sinh viên:", insertError);
+        await adminClient.auth.admin.deleteUser(createdUserId);
+        createdUserId = null;
 
-      return NextResponse.json(
-        { message: "Không thể tạo hồ sơ sinh viên." },
-        { status: 500 }
-      );
+        return NextResponse.json(
+          { message: "Không thể liên kết tài khoản với hồ sơ sinh viên." },
+          { status: 500 }
+        );
+      }
+    } else {
+      // Nếu MSSV chưa có hồ sơ thì tạo hồ sơ mới
+      const { error: insertError } = await adminClient
+        .from("students")
+        .insert({
+          mssv,
+          ho_ten: hoTen,
+          email,
+          auth_user_id: createdUserId,
+        });
+
+      if (insertError) {
+        console.error("Lỗi tạo hồ sơ sinh viên:", insertError);
+
+        await adminClient.auth.admin.deleteUser(createdUserId);
+        createdUserId = null;
+
+        return NextResponse.json(
+          { message: "Không thể tạo hồ sơ sinh viên." },
+          { status: 500 }
+        );
+      }
     }
 
     return NextResponse.json({
@@ -145,6 +174,7 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error("Lỗi đăng ký sinh viên:", error);
 
+    // Xóa tài khoản Auth nếu quá trình xử lý gặp lỗi
     if (createdUserId) {
       const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
       const secretKey = process.env.SUPABASE_SECRET_KEY;

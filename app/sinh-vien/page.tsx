@@ -41,6 +41,7 @@ export default function StudentPage() {
 
   const [student, setStudent] = useState<Student | null>(null);
   const [programs, setPrograms] = useState<Program[]>([]);
+  const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [viewingId, setViewingId] = useState("");
@@ -299,6 +300,13 @@ export default function StudentPage() {
     }
   }
 
+  // Lọc chương trình theo tên
+  const filteredPrograms = programs.filter((item) =>
+    item.program?.ten_chuong_trinh
+      ?.toLowerCase()
+      .includes(searchTerm.trim().toLowerCase())
+  );
+
   if (loading) {
     return <main style={mainStyle}>Đang tải thông tin...</main>;
   }
@@ -322,201 +330,144 @@ export default function StudentPage() {
   return (
     <main style={mainStyle}>
 
-{/* HEADER + HỒ SƠ SINH VIÊN */}
-<div className="student-mobile-panel">
+      {/* HEADER + HỒ SƠ SINH VIÊN */}
+      <div className="student-mobile-panel">
 
-  {/* LOGO LUÔN HIỂN THỊ */}
-  <div className="student-logo">
-    <img
-      src="/logo-doan-hoi-bmu.png"
-      alt="ĐOÀN – HỘI BMU"
-      style={{ width: 220, height: "auto", objectFit: "contain" }}
-    />
-    <p style={{ marginBottom: 0, color: "#64748b" }}>
-      HỆ THỐNG QUẢN LÝ HOẠT ĐỘNG
-    </p>
-  </div>
+        {/* LOGO LUÔN HIỂN THỊ */}
+        <div className="student-logo">
+          <img
+            src="/logo-doan-hoi-bmu.png"
+            alt="ĐOÀN – HỘI BMU"
+            style={{ width: 220, height: "auto", objectFit: "contain" }}
+          />
+          <p style={{ marginBottom: 0, color: "#64748b" }}>
+            HỆ THỐNG QUẢN LÝ HOẠT ĐỘNG
+          </p>
+        </div>
 
-  {/* DÒNG RÚT GỌN */}
-  <div className="mobile-greeting">
-    <strong>Xin chào, {student.ho_ten}!</strong>
+        {/* DÒNG RÚT GỌN */}
+        <div className="mobile-greeting">
+          <strong>Xin chào, {student.ho_ten}!</strong>
 
-    <button
-      onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-      className="mobile-menu-toggle"
-    >
-      {mobileMenuOpen ? "▲ Thu gọn" : "☰ Menu"}
-    </button>
-  </div>
+          <button
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            className="mobile-menu-toggle"
+          >
+            {mobileMenuOpen ? "▲ Thu gọn" : "☰ Menu"}
+          </button>
+        </div>
 
-  {/* NỘI DUNG MENU */}
-  <div className={`student-panel-content ${mobileMenuOpen ? "open" : ""}`}>
-    <header className="student-header">
-      <button onClick={handleLogout} style={buttonStyle}>
-        Đăng xuất
-      </button>
-    </header>
+        {/* NỘI DUNG MENU */}
+        <div className={`student-panel-content ${mobileMenuOpen ? "open" : ""}`}>
+          <header className="student-header">
+            <button onClick={handleLogout} style={buttonStyle}>
+              Đăng xuất
+            </button>
+          </header>
 
-    <section style={cardStyle}>
-      <p style={{ color: "#64748b" }}>
-        Chào mừng bạn đến với hệ thống giấy chứng nhận Đoàn – Hội BMU.
-      </p>
+          <section style={cardStyle}>
+            <p style={{ color: "#64748b" }}>
+              Chào mừng bạn đến với hệ thống giấy chứng nhận Đoàn – Hội BMU.
+            </p>
 
-      <div style={infoStyle}>
-        <Info label="Mã số sinh viên" value={student.mssv} />
-        <Info label="Họ và tên" value={student.ho_ten} />
-        <Info label="Lớp" value={student.lop || "Chưa cập nhật"} />
-        <Info label="Email" value={student.email || "Chưa cập nhật"} />
+            <div style={infoStyle}>
+              <Info label="Mã số sinh viên" value={student.mssv} />
+              <Info label="Họ và tên" value={student.ho_ten} />
+              <Info label="Lớp" value={student.lop || "Chưa cập nhật"} />
+              <Info label="Email" value={student.email || "Chưa cập nhật"} />
+            </div>
+
+            <div style={actionGroupStyle}>
+              <button onClick={openEditProfile} style={editButtonStyle}>
+                Thông tin cá nhân
+              </button>
+
+              <button onClick={openChangePassword} style={passwordButtonStyle}>
+                🔐 Đổi mật khẩu
+              </button>
+            </div>
+          </section>
+        </div>
       </div>
 
-      <div style={actionGroupStyle}>
-        <button onClick={openEditProfile} style={editButtonStyle}>
-          Thông tin cá nhân
-        </button>
+      <style jsx>{`
+        .student-logo {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          text-align: center;
+          margin-bottom: 16px;
+          background: white;
+          padding: 16px;
+          border-radius: 12px;
+        }
 
-        <button onClick={openChangePassword} style={passwordButtonStyle}>
-          🔐 Đổi mật khẩu
-        </button>
-      </div>
-    </section>
-  </div>
-</div>
+        .mobile-greeting {
+          display: none;
+        }
 
-<style jsx>{`
-  .student-logo {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  margin-bottom: 16px;
-  background: white;
-  padding: 16px;
-  border-radius: 12px;
-}
+        .student-panel-content {
+          display: block;
+        }
 
-  .mobile-greeting {
-    display: none;
-  }
+        @media (max-width: 768px) {
+          .student-logo {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            margin-bottom: 16px;
+            background: white;
+            padding: 16px;
+            border-radius: 12px;
+          }
 
-  .student-panel-content {
-    display: block;
-  }
+          .mobile-greeting {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            padding: 12px 16px;
+            background: #fff;
+            border-radius: 12px;
+            color: #174783;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+          }
 
-  @media (max-width: 768px) {
-    .student-logo {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      text-align: center;
-      margin-bottom: 16px;
-      background: white;
-      padding: 16px;
-      border-radius: 12px;
-    }
+          .mobile-greeting strong {
+            font-size: 15px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+          }
 
-    .mobile-greeting {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 10px;
-      padding: 12px 16px;
-      background: #fff;
-      border-radius: 12px;
-      color: #174783;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-    }
+          .mobile-menu-toggle {
+            flex-shrink: 0;
+            border: none;
+            background: #174783;
+            color: white;
+            padding: 9px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+          }
 
-    .mobile-greeting strong {
-      font-size: 15px;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
+          .student-panel-content {
+            display: none;
+          }
 
-    .mobile-menu-toggle {
-      flex-shrink: 0;
-      border: none;
-      background: #174783;
-      color: white;
-      padding: 9px 12px;
-      border-radius: 8px;
-      cursor: pointer;
-    }
+          .student-panel-content.open {
+            display: block;
+          }
 
-    .student-panel-content {
-      display: none;
-    }
-
-    .student-panel-content.open {
-      display: block;
-    }
-
-    .student-header {
-      display: flex;
-      justify-content: flex-end;
-      margin-top: 12px;
-    }
-  }
-`}</style>
-
-<style jsx>{`
-  .mobile-greeting {
-    display: none;
-  }
-
-  .student-panel-content {
-    display: block;
-  }
-
-  @media (max-width: 768px) {
-    .mobile-greeting {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 10px;
-      padding: 12px 16px;
-      background: #fff;
-      border-radius: 12px;
-      color: #174783;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-    }
-
-    .mobile-greeting strong {
-      font-size: 15px;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-
-    .mobile-menu-toggle {
-      flex-shrink: 0;
-      border: none;
-      background: #174783;
-      color: white;
-      padding: 9px 12px;
-      border-radius: 8px;
-      cursor: pointer;
-    }
-
-    .student-panel-content {
-      display: none;
-    }
-
-    .student-panel-content.open {
-      display: block;
-    }
-
-    .student-header {
-      display: flex;
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 12px;
-      margin-top: 12px;
-    }
-  }
-`}</style>
+          .student-header {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 12px;
+          }
+        }
+      `}</style>
 
       {/* DANH SÁCH CHƯƠNG TRÌNH */}
       <section style={cardStyle}>
@@ -529,68 +480,105 @@ export default function StudentPage() {
             Bạn chưa có chương trình tham gia nào.
           </p>
         ) : (
-          <div style={{ display: "grid", gap: 16 }}>
-            {programs.map((item) => (
-              <article key={item.id} style={programStyle}>
-                <h3 style={{ color: "#174783", marginTop: 0 }}>
-                  {item.program?.ten_chuong_trinh || "Chương trình"}
-                </h3>
+          <>
+            {/* THANH TÌM KIẾM */}
+            <div style={{ position: "relative", marginBottom: 20 }}>
+              <span
+                style={{
+                  position: "absolute",
+                  left: 14,
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                  fontSize: 18,
+                  color: "#64748b",
+                }}
+              >
+                🔍
+              </span>
 
-                {item.program?.mo_ta && <p>{item.program.mo_ta}</p>}
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Tìm kiếm tên chương trình..."
+                style={{
+                  ...inputStyle,
+                  paddingLeft: 44,
+                  borderRadius: 12,
+                  border: "1px solid #cbd5e1",
+                }}
+              />
+            </div>
 
-                <p>
-                  <strong>Ngày tham gia:</strong>{" "}
-                  {formatDate(item.ngay_tham_gia)}
-                </p>
+            {filteredPrograms.length === 0 ? (
+              <p style={{ color: "#64748b", textAlign: "center", padding: 20 }}>
+                Không tìm thấy chương trình phù hợp.
+              </p>
+            ) : (
+              <div style={{ display: "grid", gap: 16 }}>
+                {filteredPrograms.map((item) => (
+                  <article key={item.id} style={programStyle}>
+                    <h3 style={{ color: "#174783", marginTop: 0 }}>
+                      {item.program?.ten_chuong_trinh || "Chương trình"}
+                    </h3>
 
-                <p>
-                  <strong>Đơn vị tổ chức:</strong>{" "}
-                  {item.program?.don_vi_to_chuc || "Chưa cập nhật"}
-                </p>
+                    {item.program?.mo_ta && <p>{item.program.mo_ta}</p>}
 
-                <div style={certificateBoxStyle}>
-                  <strong style={{ color: "#174783" }}>
-                    Trạng thái giấy chứng nhận
-                  </strong>
-
-                  <div style={{ marginTop: 10 }}>
-                    <CertificateStatus status={item.trang_thai_gcn} />
-                  </div>
-
-                  {item.certificate?.so_chung_nhan && (
-                    <p style={{ marginBottom: 8 }}>
-                      <strong>Số giấy chứng nhận:</strong>{" "}
-                      {item.certificate.so_chung_nhan}
+                    <p>
+                      <strong>Ngày tham gia:</strong>{" "}
+                      {formatDate(item.ngay_tham_gia)}
                     </p>
-                  )}
 
-                  {item.certificate?.ngay_phat_hanh && (
-                    <p style={{ marginBottom: 8 }}>
-                      <strong>Ngày phát hành:</strong>{" "}
-                      {formatDate(item.certificate.ngay_phat_hanh)}
+                    <p>
+                      <strong>Đơn vị tổ chức:</strong>{" "}
+                      {item.program?.don_vi_to_chuc || "Chưa cập nhật"}
                     </p>
-                  )}
 
-                  {isIssued(item.trang_thai_gcn) &&
-                    item.certificate?.file_url && (
-                      <button
-                        onClick={() => handleViewCertificate(item.id)}
-                        disabled={viewingId !== ""}
-                        style={{
-                          ...viewButtonStyle,
-                          opacity: viewingId === item.id ? 0.7 : 1,
-                          cursor: viewingId ? "wait" : "pointer",
-                        }}
-                      >
-                        {viewingId === item.id
-                          ? "Đang mở giấy chứng nhận..."
-                          : "Xem giấy chứng nhận"}
-                      </button>
-                    )}
-                </div>
-              </article>
-            ))}
-          </div>
+                    <div style={certificateBoxStyle}>
+                      <strong style={{ color: "#174783" }}>
+                        Trạng thái giấy chứng nhận
+                      </strong>
+
+                      <div style={{ marginTop: 10 }}>
+                        <CertificateStatus status={item.trang_thai_gcn} />
+                      </div>
+
+                      {item.certificate?.so_chung_nhan && (
+                        <p style={{ marginBottom: 8 }}>
+                          <strong>Số giấy chứng nhận:</strong>{" "}
+                          {item.certificate.so_chung_nhan}
+                        </p>
+                      )}
+
+                      {item.certificate?.ngay_phat_hanh && (
+                        <p style={{ marginBottom: 8 }}>
+                          <strong>Ngày phát hành:</strong>{" "}
+                          {formatDate(item.certificate.ngay_phat_hanh)}
+                        </p>
+                      )}
+
+                      {isIssued(item.trang_thai_gcn) &&
+                        item.certificate?.file_url && (
+                          <button
+                            onClick={() => handleViewCertificate(item.id)}
+                            disabled={viewingId !== ""}
+                            style={{
+                              ...viewButtonStyle,
+                              opacity: viewingId === item.id ? 0.7 : 1,
+                              cursor: viewingId ? "wait" : "pointer",
+                            }}
+                          >
+                            {viewingId === item.id
+                              ? "Đang mở giấy chứng nhận..."
+                              : "Xem giấy chứng nhận"}
+                          </button>
+                        )}
+                    </div>
+                  </article>
+                ))}
+              </div>
+            )}
+          </>
         )}
       </section>
 
