@@ -9,8 +9,7 @@ type Program = {
   id: string;
   ten_chuong_trinh: string;
   mo_ta: string | null;
-  ngay_bat_dau: string | null;
-  ngay_ket_thuc: string | null;
+  ngay_cap: string | null;
   don_vi_to_chuc: string | null;
   trang_thai: "draft" | "published" | "closed";
 };
@@ -18,8 +17,7 @@ type Program = {
 const emptyForm = {
   ten_chuong_trinh: "",
   mo_ta: "",
-  ngay_bat_dau: "",
-  ngay_ket_thuc: "",
+  ngay_cap: "",
   don_vi_to_chuc: "",
 };
 
@@ -100,8 +98,7 @@ export default function AdminPage() {
     setForm({
       ten_chuong_trinh: program.ten_chuong_trinh || "",
       mo_ta: program.mo_ta || "",
-      ngay_bat_dau: program.ngay_bat_dau || "",
-      ngay_ket_thuc: program.ngay_ket_thuc || "",
+      ngay_cap: program.ngay_cap || "",
       don_vi_to_chuc: program.don_vi_to_chuc || "",
     });
     setMessage("");
@@ -296,28 +293,16 @@ export default function AdminPage() {
             </label>
 
             <label style={labelStyle}>
-              Ngày bắt đầu
-              <input
-                type="date"
-                style={inputStyle}
-                value={form.ngay_bat_dau}
-                onChange={(e) =>
-                  setForm({ ...form, ngay_bat_dau: e.target.value })
-                }
-              />
-            </label>
-
-            <label style={labelStyle}>
-              Ngày kết thúc
-              <input
-                type="date"
-                style={inputStyle}
-                value={form.ngay_ket_thuc}
-                onChange={(e) =>
-                  setForm({ ...form, ngay_ket_thuc: e.target.value })
-                }
-              />
-            </label>
+            Ngày cấp
+            <input
+              type="date"
+              style={inputStyle}
+              value={form.ngay_cap}
+              onChange={(e) =>
+                setForm({ ...form, ngay_cap: e.target.value })
+              }
+            />
+          </label>
           </div>
 
           <label style={labelStyle}>
@@ -407,9 +392,7 @@ export default function AdminPage() {
                     </td>
 
                     <td style={cellStyle}>
-                      {program.ngay_bat_dau || "—"}
-                      <br />
-                      {program.ngay_ket_thuc || "—"}
+                      {program.ngay_cap || "—"}
                     </td>
 
                     <td style={cellStyle}>

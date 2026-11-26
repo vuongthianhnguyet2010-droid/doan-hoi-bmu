@@ -17,42 +17,14 @@ type Program = {
   so_luong_sinh_vien: number;
 };
 
-const emptyForm = {
-  ten_chuong_trinh: "",
-  mo_ta: "",
-  ngay_bat_dau: "",
-  ngay_ket_thuc: "",
-  don_vi_to_chuc: "",
-  so_quyet_dinh: "",
-};
-
-function normalizeUnit(value: string | null) {
-  if (!value) return "";
-
-  const normalized = value.toLowerCase();
-
-  if (normalized.includes("đoàn")) {
-    return "Đoàn Thanh niên";
-  }
-
-  if (normalized.includes("hội")) {
-    return "Hội Sinh viên";
-  }
-
-  return "";
-}
-
 export default function AdminPage() {
   const router = useRouter();
 
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
   const [token, setToken] = useState("");
   const [programs, setPrograms] = useState<Program[]>([]);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [form, setForm] = useState(emptyForm);
 
   useEffect(() => {
     async function init() {
@@ -119,76 +91,7 @@ export default function AdminPage() {
   }
 
   function handleEdit(program: Program) {
-    setEditingId(program.id);
-
-    setForm({
-      ten_chuong_trinh: program.ten_chuong_trinh || "",
-      mo_ta: program.mo_ta || "",
-      ngay_bat_dau: program.ngay_bat_dau || "",
-      ngay_ket_thuc: program.ngay_ket_thuc || "",
-      don_vi_to_chuc: normalizeUnit(program.don_vi_to_chuc),
-      so_quyet_dinh: program.so_quyet_dinh || "",
-    });
-
-    setMessage("");
-    setError("");
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  }
-
-  function resetForm() {
-    setEditingId(null);
-    setForm(emptyForm);
-  }
-
-  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-
-    if (!form.ten_chuong_trinh.trim()) {
-      setError("Vui lòng nhập tên chương trình.");
-      return;
-    }
-
-    if (!form.don_vi_to_chuc) {
-      setError("Vui lòng chọn đơn vị tổ chức.");
-      return;
-    }
-
-    setSaving(true);
-    setError("");
-    setMessage("");
-
-    try {
-      const response = await fetch("/api/admin/chuong-trinh", {
-        method: editingId ? "PATCH" : "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(
-          editingId ? { id: editingId, ...form } : form
-        ),
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        setError(result.message || "Không lưu được chương trình.");
-        return;
-      }
-
-      setMessage(
-        editingId
-          ? "Đã cập nhật chương trình thành công."
-          : "Đã thêm chương trình thành công."
-      );
-
-      resetForm();
-      await loadPrograms(token);
-    } catch {
-      setError("Không thể kết nối máy chủ.");
-    } finally {
-      setSaving(false);
-    }
+    router.push(`/admin/tao-hoat-dong?id=${program.id}`);
   }
 
   async function changeStatus(program: Program) {
@@ -294,131 +197,34 @@ export default function AdminPage() {
       </header>
 
       <section style={sectionStyle}>
-        <h2 style={{ color: "#174783", marginTop: 0 }}>
-          {editingId ? "Chỉnh sửa chương trình" : "Thêm chương trình mới"}
-        </h2>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            flexWrap: "wrap",
+            gap: 12,
+          }}
+        >
+          <h2 style={{ color: "#174783", margin: 0 }}>
+            Danh sách chương trình ({programs.length})
+          </h2>
 
-        <form onSubmit={handleSubmit}>
-          <div style={gridStyle}>
-            <label style={labelStyle}>
-              Tên chương trình *
-              <input
-                style={inputStyle}
-                value={form.ten_chuong_trinh}
-                onChange={(e) =>
-                  setForm({ ...form, ten_chuong_trinh: e.target.value })
-                }
-                placeholder="Nhập tên chương trình"
-                required
-              />
-            </label>
-
-            <label style={labelStyle}>
-              Đơn vị tổ chức *
-              <select
-                style={inputStyle}
-                value={form.don_vi_to_chuc}
-                onChange={(e) =>
-                  setForm({ ...form, don_vi_to_chuc: e.target.value })
-                }
-                required
-              >
-                <option value="">-- Chọn đơn vị tổ chức --</option>
-                <option value="Đoàn Thanh niên">Đoàn Thanh niên</option>
-                <option value="Hội Sinh viên">Hội Sinh viên</option>
-              </select>
-            </label>
-
-            <label style={labelStyle}>
-              Số Quyết định
-              <input
-                style={inputStyle}
-                value={form.so_quyet_dinh}
-                onChange={(e) =>
-                  setForm({ ...form, so_quyet_dinh: e.target.value })
-                }
-                placeholder="Nhập số Quyết định"
-              />
-            </label>
-
-            <label style={labelStyle}>
-              Ngày bắt đầu
-              <input
-                type="date"
-                style={inputStyle}
-                value={form.ngay_bat_dau}
-                onChange={(e) =>
-                  setForm({ ...form, ngay_bat_dau: e.target.value })
-                }
-              />
-            </label>
-
-            <label style={labelStyle}>
-              Ngày kết thúc
-              <input
-                type="date"
-                style={inputStyle}
-                value={form.ngay_ket_thuc}
-                onChange={(e) =>
-                  setForm({ ...form, ngay_ket_thuc: e.target.value })
-                }
-              />
-            </label>
-          </div>
-
-          <label style={labelStyle}>
-            Mô tả chương trình
-            <textarea
-              style={{ ...inputStyle, minHeight: 90 }}
-              value={form.mo_ta}
-              onChange={(e) =>
-                setForm({ ...form, mo_ta: e.target.value })
-              }
-              placeholder="Nhập mô tả chương trình..."
-            />
-          </label>
-
-          {error && <p style={{ color: "#dc2626" }}>{error}</p>}
-          {message && <p style={{ color: "#15803d" }}>{message}</p>}
-
-          <div
-            style={{
-              display: "flex",
-              gap: 10,
-              marginTop: 16,
-              flexWrap: "wrap",
-            }}
+          <button
+            onClick={() => router.push("/admin/tao-hoat-dong")}
+            style={buttonStyle}
           >
-            <button type="submit" disabled={saving} style={buttonStyle}>
-              {saving
-                ? "Đang lưu..."
-                : editingId
-                ? "Lưu thay đổi"
-                : "Thêm chương trình"}
-            </button>
+            + Tạo hoạt động
+          </button>
+        </div>
 
-            {editingId && (
-              <button
-                type="button"
-                onClick={resetForm}
-                style={{ ...buttonStyle, background: "#64748b" }}
-              >
-                Hủy chỉnh sửa
-              </button>
-            )}
-          </div>
-        </form>
-      </section>
-
-      <section style={sectionStyle}>
-        <h2 style={{ color: "#174783", marginTop: 0 }}>
-          Danh sách chương trình ({programs.length})
-        </h2>
+        {error && <p style={{ color: "#dc2626" }}>{error}</p>}
+        {message && <p style={{ color: "#15803d" }}>{message}</p>}
 
         {programs.length === 0 ? (
-          <p>Chưa có chương trình nào.</p>
+          <p style={{ marginTop: 20 }}>Chưa có chương trình nào.</p>
         ) : (
-          <div style={{ overflowX: "auto" }}>
+          <div style={{ overflowX: "auto", marginTop: 20 }}>
             <table
               style={{
                 width: "100%",
@@ -447,8 +253,16 @@ export default function AdminPage() {
               <tbody>
                 {programs.map((program) => (
                   <tr key={program.id}>
-                    <td style={cellStyle}>
-                      <strong>{program.ten_chuong_trinh}</strong>
+                   <td style={{ ...cellStyle, width: 280, maxWidth: 280 }}>
+                    <strong
+                      style={{
+                        display: "block",
+                        overflowWrap: "anywhere",
+                        whiteSpace: "normal",
+                      }}
+                    >
+                      {program.ten_chuong_trinh}
+                    </strong>
                       {program.mo_ta && (
                         <p style={{ margin: "5px 0", color: "#64748b" }}>
                           {program.mo_ta}
@@ -510,7 +324,7 @@ export default function AdminPage() {
                         </button>
 
                         <button
-                          onClick={() => handleEdit(program)}
+                          onClick={() => router.push(`/admin/tao-hoat-dong?id=${program.id}`)}
                           style={smallButtonStyle}
                         >
                           Sửa
@@ -563,29 +377,6 @@ const smallButtonStyle: React.CSSProperties = {
   ...buttonStyle,
   padding: "7px 12px",
   fontSize: 13,
-};
-
-const inputStyle: React.CSSProperties = {
-  display: "block",
-  width: "100%",
-  padding: 11,
-  marginTop: 7,
-  border: "1px solid #cbd5e1",
-  borderRadius: 8,
-  boxSizing: "border-box",
-  font: "inherit",
-};
-
-const labelStyle: React.CSSProperties = {
-  display: "block",
-  fontWeight: 600,
-  marginBottom: 16,
-};
-
-const gridStyle: React.CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "repeat(auto-fit, minmax(230px, 1fr))",
-  gap: 16,
 };
 
 const cellStyle: React.CSSProperties = {
